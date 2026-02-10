@@ -737,4 +737,4 @@ def set_theme(theme):
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=443, ssl_context=('ssl/server.crt', 'ssl/server.key'))
+    app.run(debug=False, host='0.0.0.0', port=8443, ssl_context=('ssl/server.crt', 'ssl/server.key'))
