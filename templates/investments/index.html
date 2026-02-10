@@ -1,0 +1,1045 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@100;200;300;400;500;600;700&display=swap');
+    
+    :root {
+        --primary: #00f7ff;
+        --secondary: #7b2dff;
+        --dark: #0a0a1a;
+        --light: #e0e0ff;
+        --success: #00ff9d;
+        --danger: #ff3860;
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--dark);
+        color: var(--light);
+        font-weight: 300;
+    }
+    
+    h1, .modal-title, .card-header {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+    
+    .table-light th {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 600;
+        color: var(--primary);
+        border-bottom: 2px solid var(--primary);
+        background-color: rgba(26, 26, 58, 0.9);
+        padding: 1rem 0.75rem;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .table-light th:hover {
+        text-shadow: 0 0 8px rgba(0, 247, 255, 0.4);
+    }
+
+    .table-light th.text-end {
+        padding-right: 1.5rem;
+    }
+    
+    .filter-container {
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+    }
+    
+    .filter-label {
+        font-family: 'Space Grotesk', sans-serif;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .header-gradient {
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 8px rgba(123, 45, 255, 0.3);
+    }
+    
+    .table {
+        color: var(--light);
+        border-color: #2a2a4a;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(123, 45, 255, 0.1);
+    }
+    
+    .table-light {
+        background-color: #1a1a3a;
+    }
+    
+    .text-success {
+        color: var(--success) !important;
+    }
+    
+    .text-danger {
+        color: var(--danger) !important;
+    }
+    
+    .btn-outline-primary {
+        color: var(--primary);
+        border-color: var(--primary);
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: var(--primary);
+        color: var(--dark);
+    }
+    
+    .btn-outline-secondary {
+        color: var(--secondary);
+        border-color: var(--secondary);
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: var(--secondary);
+        color: white;
+    }
+    
+    .modal-content {
+        background-color: #1a1a3a;
+        border: 1px solid var(--primary);
+    }
+    
+    .form-control {
+        background-color: #0a0a1a;
+        border: 1px solid #2a2a4a;
+        color: white;
+    }
+    
+    .form-control:focus {
+        background-color: #0a0a1a;
+        border-color: var(--primary);
+        color: white;
+        box-shadow: 0 0 0 0.25rem rgba(0, 247, 255, 0.25);
+    }
+    
+    .alert-info {
+        background-color: rgba(0, 247, 255, 0.1);
+        border-color: var(--primary);
+        color: var(--light);
+    }
+    
+    .alert-link {
+        color: var(--primary);
+    }
+    
+    .table-active {
+        background-color: rgba(123, 45, 255, 0.2) !important;
+    }
+    
+    .sortable {
+        cursor: pointer;
+        position: relative;
+    }
+
+    .sortable:hover {
+        background-color: rgba(123, 45, 255, 0.1);
+    }
+
+    .sortable::after {
+        content: '↕';
+        margin-left: 5px;
+        opacity: 0.5;
+        font-size: 0.8em;
+    }
+
+    .sortable.asc::after {
+        content: '↑';
+        opacity: 1;
+    }
+
+    .sortable.desc::after {
+        content: '↓';
+        opacity: 1;
+    }
+
+    .glass-card {
+        backdrop-filter: blur(8px);
+        background-color: rgba(26, 26, 58, 0.7);
+        borderRadius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+    }
+    
+    .date-display {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 400;
+        color: var(--primary);
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-holographic {
+        background: linear-gradient(45deg, rgba(0, 247, 255, 0.1), rgba(123, 45, 255, 0.1));
+        border: 1px solid rgba(123, 45, 255, 0.3);
+        color: var(--light);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-holographic:hover {
+        background: linear-gradient(45deg, rgba(0, 247, 255, 0.2), rgba(123, 45, 255, 0.2));
+        border-color: var(--primary);
+        box-shadow: 0 0 15px rgba(0, 247, 255, 0.3);
+        color: white;
+    }
+
+    .summary-card {
+        backdrop-filter: blur(8px);
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 12px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+        padding: 1.25rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .summary-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 0 15px rgba(0, 247, 255, 0.15);
+    }
+
+    .summary-card .card-label {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-card .card-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--light);
+    }
+
+    .summary-card .card-sub {
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    .chart-container {
+        backdrop-filter: blur(8px);
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 12px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+        padding: 1rem;
+    }
+
+    .chart-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--primary);
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="header-gradient mb-0">OLIMAR'S INVESTMENTS</h1>
+        <div class="d-flex align-items-center">
+            <div class="date-display me-3">{{ now().strftime('%Y-%m-%d %H:%M') }}</div>
+            <a href="{{ url_for('add_investment') }}" class="btn btn-holographic me-2">
+                <i class="bi bi-plus-circle me-1"></i> Add Investment
+            </a>
+            <button class="btn btn-holographic" id="exportCsvBtn">
+                <i class="bi bi-download me-1"></i> Export CSV
+            </button>
+        </div>
+    </div>
+
+    {% if investments %}
+    <!-- Filter Section -->
+    <div class="filter-container mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <label for="goalFilter" class="filter-label">FILTER BY GOAL/BUCKET</label>
+                <select id="goalFilter" class="form-select bg-dark text-light border-primary">
+                    <option value="">All Goals/Buckets</option>
+                    {% for goal in investments|map(attribute='name')|unique|sort %}
+                    <option value="{{ goal }}">{{ goal }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="accountFilter" class="filter-label">FILTER BY ACCOUNT</label>
+                <select id="accountFilter" class="form-select bg-dark text-light border-primary">
+                    <option value="">All Accounts</option>
+                    {% for account in investments|map(attribute='account_name')|unique|sort %}
+                    <option value="{{ account }}">{{ account }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="typeFilter" class="filter-label">FILTER BY TYPE</label>
+                <select id="typeFilter" class="form-select bg-dark text-light border-primary">
+                    <option value="">All Types</option>
+                    <option value="Non-Provident Funds">Non-Provident Funds</option>
+                    {% for type in investments|map(attribute='type')|unique|sort %}
+                    <option value="{{ type }}">{{ type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">Total Investment</div>
+                <div class="card-value" id="summaryInvested">₱0.00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">Current Value</div>
+                <div class="card-value" id="summaryCurrentValue">₱0.00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">Profit / Loss</div>
+                <div class="card-value" id="summaryProfitLoss">₱0.00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">% Profit / Loss</div>
+                <div class="card-value" id="summaryProfitPct">0.00%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Dashboard & Save Buttons -->
+    <div class="mb-4 text-center">
+        <button class="btn btn-holographic me-2" data-bs-toggle="modal" data-bs-target="#dashboardModal">
+            <i class="bi bi-bar-chart-line me-1"></i> Summary Dashboard
+        </button>
+        <button class="btn btn-holographic me-2" id="saveSnapshotBtn">
+            <i class="bi bi-save me-1"></i> Save Investment Snapshot
+        </button>
+        <button class="btn btn-holographic" id="viewHistoryBtn" data-bs-toggle="modal" data-bs-target="#historyModal">
+            <i class="bi bi-clock-history me-1"></i> View Investment History
+        </button>
+    </div>
+    <div class="mb-4 text-center">
+        <button class="btn btn-holographic me-2" id="saveAccountSnapshotBtn">
+            <i class="bi bi-save me-1"></i> Save Per Account Snapshot
+        </button>
+        <a href="{{ url_for('account_history') }}" class="btn btn-holographic">
+            <i class="bi bi-clock-history me-1"></i> View Per Account History
+        </a>
+    </div>
+
+    <div class="table-responsive glass-card">
+        <table class="table table-hover" id="investmentsTable">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th class="sortable" data-sort="goal">GOAL/BUCKET</th>
+                    <th class="sortable" data-sort="platform">PLATFORM-USER</th>
+                    <th class="sortable" data-sort="account">ACCOUNT</th>
+                    <th class="sortable" data-sort="type">TYPE</th>
+                    <th class="text-end sortable" data-sort="invested">INVESTED</th>
+                    <th class="text-end sortable" data-sort="cash">CASH BAL.</th>
+                    <th class="text-end sortable" data-sort="market">MARKET VALUE</th>
+                    <th class="text-end sortable" data-sort="profit">PROFIT/LOSS</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for investment in investments %}
+                {% set portfolio_value = namespace(total=0) %}
+                {% for portfolio in portfolios %}
+                    {% if portfolio.account == investment.account_name %}
+                        {% set portfolio_value.total = portfolio_value.total + portfolio.market_value %}
+                    {% endif %}
+                {% endfor %}
+                {% set total_value = investment.actual_amount + portfolio_value.total %}
+                {% set profit = total_value - investment.total_amount %}
+                {% set profit_pct = (profit / investment.total_amount * 100) if investment.total_amount > 0 else 0 %}
+                <tr data-goal="{{ investment.name }}"
+                    data-account="{{ investment.account_name }}"
+                    data-platform="{{ investment.platform }}"
+                    data-type="{{ investment.type }}"
+                    data-total="{{ investment.total_amount }}"
+                    data-cash="{{ investment.actual_amount if investment.actual_amount is not none else investment.total_amount }}"
+                    data-market="{{ portfolio_value.total }}"
+                    data-actual="{{ total_value }}"
+                    data-profit="{{ profit }}">
+                    <td class="fw-bold">{{ investment.name }}</td>
+                    <td>{{ investment.platform }}</td>
+                    <td>{{ investment.account_name }}</td>
+                    <td>{{ investment.type }}</td>
+                    <td class="text-end">{{ "{:,.2f}".format(investment.total_amount) }}</td>
+                    <td class="text-end">
+                        <span class="d-inline-block me-2">{{ "{:,.2f}".format(investment.actual_amount) if investment.actual_amount is not none else "{:,.2f}".format(investment.total_amount) }}</span>
+                        <button class="btn btn-sm btn-outline-primary p-0 glow-on-hover" 
+                                style="width: 24px; height: 24px;"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editActualAmountModal"
+                                data-investment-id="{{ investment.id }}"
+                                data-current-value="{{ investment.actual_amount if investment.actual_amount is not none else investment.total_amount }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    </td>
+                    <td class="text-end">
+                        <span class="d-inline-block me-2">{{ "{:,.2f}".format(portfolio_value.total) }}</span>
+                        {% if investment.type != 'Stocks' %}
+                        <button class="btn btn-sm btn-outline-secondary p-0 glow-on-hover" 
+                                style="width: 24px; height: 24px;"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editMarketValueModal"
+                                data-investment-id="{{ investment.id }}"
+                                data-account-name="{{ investment.account_name }}"
+                                data-current-value="{{ portfolio_value.total }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                    <td class="text-end {% if profit > 0 %}text-success{% elif profit < 0 %}text-danger fw-bold{% endif %}">
+                        {{ "{:+,.2f}".format(profit) }}<br>
+                        <small class="{% if profit_pct > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "{:+.2f}%".format(profit_pct) }}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('transactions', investment_id=investment.id) }}" class="btn btn-outline-primary">
+                                <i class="bi bi-graph-up"></i>
+                            </a>
+                            <a href="{{ url_for('edit_investment', id=investment.id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-gear"></i>
+                            </a>
+                            <a href="{{ url_for('delete_investment', id=investment.id) }}" class="btn btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-active" id="totalsRow">
+                    <td colspan="4" class="fw-bold">TOTAL</td>
+                    <td class="text-end fw-bold" id="totalInvested">{{ "{:,.2f}".format(investments|sum(attribute='total_amount')) }}</td>
+                    <td class="text-end fw-bold" id="totalCurrent">{{ "{:,.2f}".format(investments|sum(attribute='actual_amount')) }}</td>
+                    <td class="text-end fw-bold" id="totalMarketValue">{{ "{:,.2f}".format(portfolios|sum(attribute='market_value')) }}</td>
+                    <td class="text-end fw-bold" id="totalProfit">
+                        {{ "{:+,.2f}".format((investments|sum(attribute='actual_amount') + portfolios|sum(attribute='market_value')) - investments|sum(attribute='total_amount')) }}
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Edit Cash Balance Modal -->
+    <div class="modal fade" id="editActualAmountModal" tabindex="-1" aria-labelledby="editActualAmountModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-primary">
+                <div class="modal-header bg-dark border-bottom-primary">
+                    <h5 class="modal-title text-primary" id="editActualAmountModalLabel">UPDATE CASH BALANCE</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="" id="actualAmountForm">
+                    <input type="hidden" name="filter_goal" value="">
+                    <input type="hidden" name="filter_account" value="">
+                    <input type="hidden" name="filter_type" value="">
+                    <div class="modal-body bg-darker">
+                        <div class="mb-3">
+                            <label for="actualAmountInput" class="form-label text-light">CASH BALANCE</label>
+                            <input type="number" step="0.01" class="form-control bg-dark text-light border-primary" id="actualAmountInput" name="actual_amount" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-dark border-top-primary">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">CANCEL</button>
+                        <button type="submit" class="btn btn-primary">CONFIRM</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Market Value Modal (for non-Stock investments) -->
+    <div class="modal fade" id="editMarketValueModal" tabindex="-1" aria-labelledby="editMarketValueModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-secondary">
+                <div class="modal-header bg-dark border-bottom-secondary">
+                    <h5 class="modal-title text-secondary" id="editMarketValueModalLabel">UPDATE MARKET VALUE</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ url_for('update_market_value') }}" id="marketValueForm">
+                    <input type="hidden" name="account_name" id="marketValueAccount">
+                    <input type="hidden" name="filter_goal" value="">
+                    <input type="hidden" name="filter_account" value="">
+                    <input type="hidden" name="filter_type" value="">
+                    <div class="modal-body bg-darker">
+                        <div class="mb-3">
+                            <label for="marketValueInput" class="form-label text-light">MARKET VALUE</label>
+                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" id="marketValueInput" name="market_value" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-dark border-top-secondary">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">CANCEL</button>
+                        <button type="submit" class="btn btn-secondary">CONFIRM</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Summary Dashboard Modal -->
+    <div class="modal fade" id="dashboardModal" tabindex="-1" aria-labelledby="dashboardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content" style="background-color: #1a1a3a; border: 1px solid var(--primary);">
+                <div class="modal-header bg-dark" style="border-bottom: 1px solid var(--primary);">
+                    <h5 class="modal-title text-primary" id="dashboardModalLabel">SUMMARY DASHBOARD</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Allocation by Invested Amount -->
+                    <div class="chart-container mb-4">
+                        <div class="chart-title">Allocation by Invested Amount</div>
+                        <div id="chartByAmount"></div>
+                    </div>
+                    <!-- By Goal & By Type -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <div class="chart-title">Allocation by Goal</div>
+                                <div id="chartByGoal"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <div class="chart-title">Allocation by Type</div>
+                                <div id="chartByType"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- History Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content" style="background-color: #1a1a3a; border: 1px solid var(--primary);">
+                <div class="modal-header bg-dark" style="border-bottom: 1px solid var(--primary);">
+                    <h5 class="modal-title text-primary" id="historyModalLabel">INVESTMENT HISTORY</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" style="color: var(--light);">
+                            <thead>
+                                <tr>
+                                    <th style="color: var(--primary);">DATE</th>
+                                    <th class="text-end" style="color: var(--primary);">INVESTED</th>
+                                    <th class="text-end" style="color: var(--primary);">CURRENT VALUE</th>
+                                    <th class="text-end" style="color: var(--primary);">PROFIT/LOSS</th>
+                                    <th class="text-end" style="color: var(--primary);">% P/L</th>
+                                    <th class="text-center" style="color: var(--primary);">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="chart-container mt-4">
+                        <div class="chart-title">Investment History Trend</div>
+                        <div id="historyLineChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info border-primary">
+        <i class="bi bi-exclamation-circle me-2"></i>
+        No investments found. <a href="{{ url_for('add_investment') }}" class="alert-link">Create your first investment</a>.
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality with total recomputation
+    const goalFilter = document.getElementById('goalFilter');
+    const accountFilter = document.getElementById('accountFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const totalsRow = document.getElementById('totalsRow');
+
+    function getVisibleRows() {
+        const rows = [];
+        document.querySelectorAll('#investmentsTable tbody tr').forEach(row => {
+            if (row.style.display !== 'none') rows.push(row);
+        });
+        return rows;
+    }
+
+    function updateTotals() {
+        let totalInvested = 0;
+        let totalCurrent = 0;
+        let totalMarketValue = 0;
+        let totalProfit = 0;
+
+        document.querySelectorAll('#investmentsTable tbody tr').forEach(row => {
+            if (row.style.display !== 'none') {
+                totalInvested += parseFloat(row.dataset.total);
+                totalCurrent += parseFloat(row.querySelector('td:nth-child(6) span').textContent.replace(/,/g, ''));
+                totalMarketValue += parseFloat(row.querySelector('td:nth-child(7) span').textContent.replace(/,/g, ''));
+                totalProfit += parseFloat(row.dataset.profit);
+            }
+        });
+
+        // Update table totals
+        document.getElementById('totalInvested').textContent = formatNumber(totalInvested);
+        document.getElementById('totalCurrent').textContent = formatNumber(totalCurrent);
+        document.getElementById('totalMarketValue').textContent = formatNumber(totalMarketValue);
+        document.getElementById('totalProfit').textContent = formatNumber(totalProfit, true);
+
+        const profitCell = document.getElementById('totalProfit');
+        profitCell.classList.remove('text-success', 'text-danger');
+        profitCell.classList.add(totalProfit >= 0 ? 'text-success' : 'text-danger');
+
+        // Update summary cards
+        const currentValue = totalCurrent + totalMarketValue;
+        const profitPct = totalInvested > 0 ? ((currentValue - totalInvested) / totalInvested * 100) : 0;
+        const pl = currentValue - totalInvested;
+
+        document.getElementById('summaryInvested').textContent = '₱' + formatNumber(totalInvested);
+        document.getElementById('summaryCurrentValue').textContent = '₱' + formatNumber(currentValue);
+
+        const plEl = document.getElementById('summaryProfitLoss');
+        plEl.textContent = '₱' + formatNumber(pl, true);
+        plEl.classList.remove('text-success', 'text-danger');
+        plEl.classList.add(pl >= 0 ? 'text-success' : 'text-danger');
+
+        const pctEl = document.getElementById('summaryProfitPct');
+        pctEl.textContent = (profitPct >= 0 ? '+' : '') + profitPct.toFixed(2) + '%';
+        pctEl.classList.remove('text-success', 'text-danger');
+        pctEl.classList.add(profitPct >= 0 ? 'text-success' : 'text-danger');
+
+    }
+
+    function formatNumber(value, showSign = false) {
+        return (showSign && value > 0 ? '+' : '') + value.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function aggregate(rows, key) {
+        const map = {};
+        rows.forEach(row => {
+            const label = row.dataset[key] || 'Unknown';
+            const amount = parseFloat(row.dataset.total) || 0;
+            map[label] = (map[label] || 0) + amount;
+        });
+        return { labels: Object.keys(map), values: Object.values(map) };
+    }
+
+    const chartLayout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        margin: { t: 10, b: 10, l: 10, r: 10 },
+        showlegend: true,
+        legend: { font: { color: '#e0e0ff', size: 10 }, orientation: 'h', y: -0.15 },
+        height: 350
+    };
+
+    const chartConfig = { displayModeBar: false, responsive: true };
+
+    function renderPie(divId, data) {
+        const trace = {
+            labels: data.labels,
+            values: data.values,
+            type: 'pie',
+            hole: 0.4,
+            textinfo: 'percent',
+            textfont: { color: '#e0e0ff', size: 11 },
+            marker: {
+                colors: ['#00f7ff', '#7b2dff', '#00ff9d', '#ff3860', '#f5a623', '#50e3c2', '#b8e986'],
+                line: { color: '#0a0a1a', width: 2 }
+            }
+        };
+        Plotly.newPlot(divId, [trace], chartLayout, chartConfig);
+    }
+
+    function renderHistoryChart(sorted) {
+        const dates = sorted.map(s => s.date);
+        const traceInvested = {
+            x: dates, y: sorted.map(s => s.total_invested),
+            name: 'Invested', mode: 'lines+markers', type: 'scatter',
+            line: { color: '#7b2dff', width: 2 },
+            marker: { size: 6 }
+        };
+        const traceCurrent = {
+            x: dates, y: sorted.map(s => s.current_value),
+            name: 'Current Value', mode: 'lines+markers', type: 'scatter',
+            line: { color: '#00f7ff', width: 2 },
+            marker: { size: 6 }
+        };
+        const tracePL = {
+            x: dates, y: sorted.map(s => s.profit_loss),
+            name: 'Profit/Loss', mode: 'lines+markers', type: 'scatter',
+            line: { color: '#00ff9d', width: 2 },
+            marker: { size: 6 },
+            yaxis: 'y2'
+        };
+        const lineLayout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 20, b: 50, l: 70, r: 70 },
+            height: 350,
+            legend: { font: { color: '#e0e0ff', size: 11 }, orientation: 'h', y: -0.2 },
+            xaxis: { color: '#e0e0ff', gridcolor: 'rgba(123,45,255,0.15)' },
+            yaxis: { title: 'Amount (₱)', color: '#e0e0ff', gridcolor: 'rgba(123,45,255,0.15)' },
+            yaxis2: { title: 'P/L (₱)', color: '#00ff9d', overlaying: 'y', side: 'right', gridcolor: 'rgba(0,255,157,0.1)' }
+        };
+        Plotly.newPlot('historyLineChart', [traceInvested, traceCurrent, tracePL], lineLayout, { displayModeBar: false, responsive: true });
+    }
+
+    function updateCharts() {
+        const rows = getVisibleRows();
+
+        // By invested amount (each account)
+        const byAmount = { labels: [], values: [] };
+        rows.forEach(row => {
+            const account = row.querySelector('td:nth-child(3)').textContent.trim();
+            byAmount.labels.push(account);
+            byAmount.values.push(parseFloat(row.dataset.total) || 0);
+        });
+        renderPie('chartByAmount', byAmount);
+
+        renderPie('chartByGoal', aggregate(rows, 'goal'));
+        renderPie('chartByType', aggregate(rows, 'type'));
+    }
+
+    function applyFilters() {
+        const selectedGoal = goalFilter.value;
+        const selectedAccount = accountFilter.value;
+        const selectedType = typeFilter.value;
+        const rows = document.querySelectorAll('#investmentsTable tbody tr');
+
+        rows.forEach(row => {
+            const matchGoal = !selectedGoal || row.dataset.goal === selectedGoal;
+            const matchAccount = !selectedAccount || row.dataset.account === selectedAccount;
+            const matchType = !selectedType || (selectedType === 'Non-Provident Funds' ? row.dataset.type !== 'Provident Funds' : row.dataset.type === selectedType);
+            row.style.display = (matchGoal && matchAccount && matchType) ? '' : 'none';
+        });
+
+        updateTotals();
+    }
+
+    function getFilterQueryString() {
+        const params = new URLSearchParams();
+        if (goalFilter.value) params.set('filter_goal', goalFilter.value);
+        if (accountFilter.value) params.set('filter_account', accountFilter.value);
+        if (typeFilter.value) params.set('filter_type', typeFilter.value);
+        return params.toString() ? '?' + params.toString() : '';
+    }
+
+    function updateActionLinks() {
+        const qs = getFilterQueryString();
+
+        // Update edit/delete links in table rows
+        document.querySelectorAll('#investmentsTable tbody tr').forEach(row => {
+            const links = row.querySelectorAll('td:last-child a');
+            links.forEach(link => {
+                const base = link.href.split('?')[0];
+                link.href = base + qs;
+            });
+        });
+
+        // Update Add Investment link
+        const addBtn = document.querySelector('a[href*="add"]');
+        if (addBtn) {
+            const base = addBtn.href.split('?')[0];
+            addBtn.href = base + qs;
+        }
+
+        // Update hidden fields in modal forms
+        document.querySelectorAll('input[name="filter_goal"]').forEach(el => el.value = goalFilter.value);
+        document.querySelectorAll('input[name="filter_account"]').forEach(el => el.value = accountFilter.value);
+        document.querySelectorAll('input[name="filter_type"]').forEach(el => el.value = typeFilter.value);
+    }
+
+    goalFilter.addEventListener('change', function() { applyFilters(); updateActionLinks(); });
+    accountFilter.addEventListener('change', function() { applyFilters(); updateActionLinks(); });
+    typeFilter.addEventListener('change', function() { applyFilters(); updateActionLinks(); });
+
+    // Restore filters from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('filter_goal')) goalFilter.value = urlParams.get('filter_goal');
+    if (urlParams.get('filter_account')) accountFilter.value = urlParams.get('filter_account');
+    if (urlParams.get('filter_type')) typeFilter.value = urlParams.get('filter_type');
+    if (goalFilter.value || accountFilter.value || typeFilter.value) {
+        applyFilters();
+        updateActionLinks();
+    }
+
+    // Initialize totals and charts
+    updateTotals();
+
+    // Sorting functionality
+    const investmentTbody = document.querySelector('#investmentsTable tbody');
+    const investmentRows = Array.from(investmentTbody.querySelectorAll('tr'));
+    const sortableHeaders = document.querySelectorAll('#investmentsTable th.sortable');
+    let currentSort = { column: null, direction: 'asc' };
+
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const column = this.dataset.sort;
+            sortableHeaders.forEach(h => h.classList.remove('asc', 'desc'));
+
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            this.classList.add(currentSort.direction);
+
+            const dir = currentSort.direction === 'asc' ? 1 : -1;
+            investmentRows.sort((a, b) => {
+                let av, bv;
+                switch (column) {
+                    case 'goal': av = a.dataset.goal; bv = b.dataset.goal; return dir * av.localeCompare(bv);
+                    case 'platform': av = a.dataset.platform; bv = b.dataset.platform; return dir * av.localeCompare(bv);
+                    case 'account': av = a.dataset.account; bv = b.dataset.account; return dir * av.localeCompare(bv);
+                    case 'type': av = a.dataset.type; bv = b.dataset.type; return dir * av.localeCompare(bv);
+                    case 'invested': return dir * (parseFloat(a.dataset.total) - parseFloat(b.dataset.total));
+                    case 'cash': return dir * (parseFloat(a.dataset.cash) - parseFloat(b.dataset.cash));
+                    case 'market': return dir * (parseFloat(a.dataset.market) - parseFloat(b.dataset.market));
+                    case 'profit': return dir * (parseFloat(a.dataset.profit) - parseFloat(b.dataset.profit));
+                }
+                return 0;
+            });
+            investmentRows.forEach(row => investmentTbody.appendChild(row));
+        });
+    });
+
+    // Cash Balance Modal script
+    var editActualModal = document.getElementById('editActualAmountModal');
+    editActualModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var investmentId = button.getAttribute('data-investment-id');
+        var currentValue = button.getAttribute('data-current-value');
+        
+        var modalInput = editActualModal.querySelector('#actualAmountInput');
+        var modalForm = editActualModal.querySelector('#actualAmountForm');
+        
+        modalInput.value = currentValue;
+        modalForm.action = "{{ url_for('update_actual_amount', id=0) }}".replace('/0', '/' + investmentId);
+    });
+
+    // Market Value Modal script (for non-Stock investments)
+    var editMarketModal = document.getElementById('editMarketValueModal');
+    editMarketModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var accountName = button.getAttribute('data-account-name');
+        var currentValue = button.getAttribute('data-current-value');
+        
+        var modalInput = editMarketModal.querySelector('#marketValueInput');
+        var accountInput = editMarketModal.querySelector('#marketValueAccount');
+        
+        modalInput.value = currentValue;
+        accountInput.value = accountName;
+    });
+
+    // Summary Dashboard Modal - render charts when shown
+    var dashboardModal = document.getElementById('dashboardModal');
+    dashboardModal.addEventListener('shown.bs.modal', function () {
+        updateCharts();
+    });
+
+    // Save Snapshot
+    document.getElementById('saveSnapshotBtn').addEventListener('click', function() {
+        const invested = parseFloat(document.getElementById('summaryInvested').textContent.replace(/[₱,]/g, ''));
+        const current = parseFloat(document.getElementById('summaryCurrentValue').textContent.replace(/[₱,]/g, ''));
+        const pl = current - invested;
+        const plPct = invested > 0 ? ((pl / invested) * 100) : 0;
+
+        fetch('{{ url_for("save_snapshot") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                total_invested: invested,
+                current_value: current,
+                profit_loss: pl,
+                profit_loss_pct: plPct
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Snapshot saved successfully! (' + data.date + ')');
+            }
+        })
+        .catch(() => alert('Error saving snapshot.'));
+    });
+
+    // Save Per Account Snapshot
+    document.getElementById('saveAccountSnapshotBtn').addEventListener('click', function() {
+        const accounts = [];
+        document.querySelectorAll('#investmentsTable tbody tr').forEach(row => {
+            if (row.style.display !== 'none') {
+                const invested = parseFloat(row.dataset.total) || 0;
+                const currentValue = parseFloat(row.dataset.actual) || 0;
+                const pl = currentValue - invested;
+                const plPct = invested > 0 ? ((pl / invested) * 100) : 0;
+                accounts.push({
+                    account_name: row.dataset.account,
+                    goal: row.dataset.goal,
+                    platform: row.dataset.platform,
+                    type: row.dataset.type,
+                    total_invested: invested,
+                    current_value: currentValue,
+                    profit_loss: pl,
+                    profit_loss_pct: plPct
+                });
+            }
+        });
+        if (accounts.length === 0) { alert('No accounts to save.'); return; }
+        fetch('{{ url_for("save_account_snapshot") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accounts: accounts })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Per account snapshot saved! (' + data.saved + ' accounts, ' + data.date + ')');
+            }
+        })
+        .catch(() => alert('Error saving per account snapshot.'));
+    });
+
+    // View History Modal - load snapshots when shown
+    var historyModal = document.getElementById('historyModal');
+    historyModal.addEventListener('shown.bs.modal', function () {
+        fetch('{{ url_for("investment_snapshots") }}')
+        .then(res => res.json())
+        .then(snapshots => {
+            const tbody = document.getElementById('historyTableBody');
+            if (snapshots.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No snapshots saved yet.</td></tr>';
+                document.getElementById('historyLineChart').innerHTML = '';
+                return;
+            }
+            tbody.innerHTML = snapshots.map(s => {
+                const plClass = s.profit_loss >= 0 ? 'text-success' : 'text-danger';
+                return `<tr data-snapshot-id="${s.id}">
+                    <td>${s.date}</td>
+                    <td class="text-end">${formatNumber(s.total_invested)}</td>
+                    <td class="text-end">${formatNumber(s.current_value)}</td>
+                    <td class="text-end ${plClass}">${formatNumber(s.profit_loss, true)}</td>
+                    <td class="text-end ${plClass}">${s.profit_loss_pct >= 0 ? '+' : ''}${s.profit_loss_pct.toFixed(2)}%</td>
+                    <td class="text-center"><button class="btn btn-sm btn-outline-danger delete-snapshot-btn" data-id="${s.id}"><i class="bi bi-trash"></i></button></td>
+                </tr>`;
+            }).join('');
+
+            // Attach delete handlers
+            tbody.querySelectorAll('.delete-snapshot-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!confirm('Delete this snapshot?')) return;
+                    const id = this.dataset.id;
+                    fetch('/investments/snapshots/' + id, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const row = this.closest('tr');
+                            row.remove();
+                            // Re-render chart with remaining rows
+                            const remaining = [];
+                            tbody.querySelectorAll('tr[data-snapshot-id]').forEach(r => {
+                                const cells = r.querySelectorAll('td');
+                                remaining.push({
+                                    date: cells[0].textContent,
+                                    total_invested: parseFloat(cells[1].textContent.replace(/,/g, '')),
+                                    current_value: parseFloat(cells[2].textContent.replace(/,/g, '')),
+                                    profit_loss: parseFloat(cells[3].textContent.replace(/[+,]/g, '')),
+                                    profit_loss_pct: parseFloat(cells[4].textContent.replace(/[+%]/g, ''))
+                                });
+                            });
+                            if (remaining.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No snapshots saved yet.</td></tr>';
+                                Plotly.purge('historyLineChart');
+                            } else {
+                                renderHistoryChart(remaining.reverse());
+                            }
+                        }
+                    })
+                    .catch(() => alert('Error deleting snapshot.'));
+                });
+            });
+
+            renderHistoryChart([...snapshots].reverse());
+        })
+        .catch(() => {
+            document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading history.</td></tr>';
+        });
+    });
+
+    // Export to CSV
+    document.getElementById('exportCsvBtn').addEventListener('click', function() {
+        const headers = ['Goal/Bucket', 'Platform-User', 'Account', 'Type', 'Invested', 'Cash Balance', 'Market Value', 'Profit/Loss', 'Profit/Loss %'];
+        const csvRows = [headers.join(',')];
+
+        document.querySelectorAll('#investmentsTable tbody tr').forEach(row => {
+            if (row.style.display === 'none') return;
+            const invested = parseFloat(row.dataset.total) || 0;
+            const cash = parseFloat(row.dataset.cash) || 0;
+            const market = parseFloat(row.dataset.market) || 0;
+            const profit = parseFloat(row.dataset.profit) || 0;
+            const profitPct = invested > 0 ? (profit / invested * 100) : 0;
+
+            const cols = [
+                '"' + row.dataset.goal.replace(/"/g, '""') + '"',
+                '"' + row.dataset.platform.replace(/"/g, '""') + '"',
+                '"' + row.dataset.account.replace(/"/g, '""') + '"',
+                '"' + row.dataset.type.replace(/"/g, '""') + '"',
+                invested.toFixed(2),
+                cash.toFixed(2),
+                market.toFixed(2),
+                profit.toFixed(2),
+                profitPct.toFixed(2) + '%'
+            ];
+            csvRows.push(cols.join(','));
+        });
+
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'investments_' + new Date().toISOString().slice(0, 10) + '.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    });
+});
+</script>
+{% endblock %}

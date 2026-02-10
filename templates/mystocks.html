@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .portfolio-summary {
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+    }
+    
+    .summary-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .profit-positive {
+        color: var(--success);
+    }
+    
+    .profit-negative {
+        color: var(--danger);
+    }
+    
+    .search-container {
+        margin-bottom: 20px;
+    }
+    
+    .chart-container {
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+        min-height: 500px;
+    }
+    
+    .chart-wrapper {
+        position: relative;
+        height: 450px;
+        width: 100%;
+    }
+    
+    .chart-title {
+        color: white !important;
+        text-align: center;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .sortable {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .sortable:hover {
+        background-color: rgba(123, 45, 255, 0.1);
+    }
+    
+    .sortable::after {
+        content: '↕';
+        margin-left: 5px;
+        opacity: 0.5;
+        font-size: 0.8em;
+    }
+    
+    .sortable.asc::after {
+        content: '↑';
+        opacity: 1;
+    }
+    
+    .sortable.desc::after {
+        content: '↓';
+        opacity: 1;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="header-gradient mb-0">MY STOCKS</h1>
+        <div class="date-display">{{ now().strftime('%Y-%m-%d %H:%M') }}</div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>TOTAL INVESTED</h6>
+                <div class="summary-value">
+                    {{ "₱{:,.2f}".format(stocks|sum(attribute='total_cost')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>MARKET VALUE</h6>
+                <div class="summary-value">
+                    {{ "₱{:,.2f}".format(stocks|sum(attribute='market_value')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>TOTAL PROFIT</h6>
+                <div class="summary-value {% if (stocks|sum(attribute='profit')) >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {{ "₱{:+,.2f}".format(stocks|sum(attribute='profit')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>PROFIT %</h6>
+                <div class="summary-value {% if stocks|sum(attribute='total_cost') > 0 and (stocks|sum(attribute='profit')/stocks|sum(attribute='total_cost')*100) >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {% set total_cost = stocks|sum(attribute='total_cost') %}
+                    {% if total_cost > 0 %}
+                        {{ "{:+.2f}%".format(stocks|sum(attribute='profit')/total_cost*100) }}
+                    {% else %}
+                        0.00%
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie Charts Row -->
+    <div class="row mb-4">
+        <!-- Market Value Chart -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="chart-title">PORTFOLIO ALLOCATION BY MARKET VALUE</h5>
+                <div class="chart-wrapper">
+                    <canvas id="marketValueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Cost Chart -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="chart-title">PORTFOLIO ALLOCATION BY TOTAL COST</h5>
+                <div class="chart-wrapper">
+                    <canvas id="totalCostChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="{{ url_for('portfolio') }}" class="btn btn-holographic me-2">
+                <i class="bi bi-arrow-left"></i> Back to Portfolio
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Filter -->
+    <div class="row search-container">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by symbol...">
+                <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive glass-card">
+        <table class="table table-hover" id="stocksTable">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th class="sortable" data-sort="symbol">SYMBOL</th>
+                    <th class="text-end">TOTAL SHARES</th>
+                    <th class="text-end">AVG PRICE</th>
+                    <th class="text-end">LATEST PRICE</th>
+                    <th class="text-end sortable" data-sort="total_cost">TOTAL COST</th>
+                    <th class="text-end sortable" data-sort="market_value">MARKET VALUE</th>
+                    <th class="text-end sortable" data-sort="profit">PROFIT/LOSS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    <td class="fw-bold">{{ stock.symbol }}</td>
+                    <td class="text-end">{{ "{:,.2f}".format(stock.total_shares) }}</td>
+                    <td class="text-end">{{ "₱{:,.5f}".format(stock.average_price) }}</td>
+                    <td class="text-end">{{ "₱{:,.2f}".format(stock.latest_price) if stock.latest_price else '-' }}</td>
+                    <td class="text-end" data-sort-value="{{ stock.total_cost }}">{{ "₱{:,.2f}".format(stock.total_cost) }}</td>
+                    <td class="text-end" data-sort-value="{{ stock.market_value }}">{{ "₱{:,.2f}".format(stock.market_value) }}</td>
+                    <td class="text-end {% if stock.profit >= 0 %}text-success{% else %}text-danger{% endif %}" data-sort-value="{{ stock.profit }}">
+                        {{ "₱{:+,.2f}".format(stock.profit) }}
+                        <br>
+                        <small>
+                            {% if stock.total_cost > 0 %}
+                                {{ "{:+.2f}%".format(stock.profit/stock.total_cost*100) }}
+                            {% else %}
+                                0.00%
+                            {% endif %}
+                        </small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const table = document.getElementById('stocksTable');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+        const sortableHeaders = table.querySelectorAll('th.sortable');
+        
+        let currentSort = {
+            column: null,
+            direction: 'asc' // 'asc' or 'desc'
+        };
+        
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+            
+            rows.forEach(row => {
+                const symbol = row.cells[0].textContent.toLowerCase();
+                
+                if (symbol.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        clearSearch.addEventListener('click', function() {
+            searchInput.value = '';
+            rows.forEach(row => {
+                row.style.display = '';
+            });
+        });
+        
+        // Sorting functionality
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.getAttribute('data-sort');
+                
+                // Remove previous sort indicators
+                sortableHeaders.forEach(h => {
+                    h.classList.remove('asc', 'desc');
+                });
+                
+                // Toggle sort direction if clicking the same column
+                if (currentSort.column === column) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.column = column;
+                    currentSort.direction = 'asc';
+                }
+                
+                // Add sort indicator to current column
+                this.classList.add(currentSort.direction);
+                
+                // Sort the rows
+                sortTable(column, currentSort.direction);
+            });
+        });
+        
+        function sortTable(column, direction) {
+            const sortedRows = rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(column) {
+                    case 'symbol':
+                        aValue = a.cells[0].textContent.trim();
+                        bValue = b.cells[0].textContent.trim();
+                        return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                    
+                    case 'total_cost':
+                    case 'market_value':
+                    case 'profit':
+                        // Use data attribute for numeric sorting
+                        aValue = parseFloat(a.querySelector(`td[data-sort-value]`).getAttribute('data-sort-value'));
+                        bValue = parseFloat(b.querySelector(`td[data-sort-value]`).getAttribute('data-sort-value'));
+                        return direction === 'asc' ? aValue - bValue : bValue - aValue;
+                }
+            });
+            
+            // Clear the table
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+            
+            // Add sorted rows back to table
+            sortedRows.forEach(row => {
+                tbody.appendChild(row);
+            });
+        }
+
+        // Prepare stock data
+        const stocksData = [
+            {% for stock in stocks %}
+            {
+                symbol: '{{ stock.symbol }}',
+                marketValue: {{ stock.market_value }},
+                totalCost: {{ stock.total_cost }},
+                marketValuePercentage: {% if stocks|sum(attribute='market_value') > 0 %}{{ (stock.market_value / stocks|sum(attribute='market_value') * 100)|round(2) }}{% else %}0{% endif %},
+                totalCostPercentage: {% if stocks|sum(attribute='total_cost') > 0 %}{{ (stock.total_cost / stocks|sum(attribute='total_cost') * 100)|round(2) }}{% else %}0{% endif %}
+            },
+            {% endfor %}
+        ];
+
+        // Filter out stocks with zero value
+        const filteredStocks = stocksData.filter(stock => stock.marketValue > 0 || stock.totalCost > 0);
+
+        // Sort stocks by market value (highest to lowest)
+        const sortedByMarketValue = [...filteredStocks].sort((a, b) => b.marketValue - a.marketValue);
+        const marketValueLabels = sortedByMarketValue.map(stock => stock.symbol);
+        const marketValueData = sortedByMarketValue.map(stock => stock.marketValue);
+
+        // Sort stocks by total cost (highest to lowest)
+        const sortedByTotalCost = [...filteredStocks].sort((a, b) => b.totalCost - a.totalCost);
+        const totalCostLabels = sortedByTotalCost.map(stock => stock.symbol);
+        const totalCostData = sortedByTotalCost.map(stock => stock.totalCost);
+
+        // Generate colors
+        const generateColors = (count) => {
+            const colors = [];
+            const hueStep = 360 / count;
+            for (let i = 0; i < count; i++) {
+                const hue = i * hueStep;
+                colors.push(`hsla(${hue}, 70%, 60%, 0.8)`);
+            }
+            return colors;
+        };
+
+        const marketValueColors = generateColors(marketValueLabels.length);
+        const totalCostColors = generateColors(totalCostLabels.length);
+
+        // Common chart options with white text
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    right: 50
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    align: 'center',
+                    labels: {
+                        color: 'white',
+                        font: {
+                            size: 11,
+                            family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif"
+                        },
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                    return {
+                                        text: `${label} (${percentage}%)`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        strokeStyle: data.datasets[0].backgroundColor[i],
+                                        fontColor: 'white',
+                                        lineWidth: 1,
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26, 26, 58, 0.9)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(123, 45, 255, 0.5)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : '0.00';
+                            return `${label}: ₱${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        };
+
+        // Create Market Value Chart
+        const marketValueCtx = document.getElementById('marketValueChart').getContext('2d');
+        const marketValueChart = new Chart(marketValueCtx, {
+            type: 'pie',
+            data: {
+                labels: marketValueLabels,
+                datasets: [{
+                    data: marketValueData,
+                    backgroundColor: marketValueColors,
+                    borderColor: 'rgba(26, 26, 58, 0.8)',
+                    borderWidth: 1
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Create Total Cost Chart
+        const totalCostCtx = document.getElementById('totalCostChart').getContext('2d');
+        const totalCostChart = new Chart(totalCostCtx, {
+            type: 'pie',
+            data: {
+                labels: totalCostLabels,
+                datasets: [{
+                    data: totalCostData,
+                    backgroundColor: totalCostColors,
+                    borderColor: 'rgba(26, 26, 58, 0.8)',
+                    borderWidth: 1
+                }]
+            },
+            options: chartOptions
+        });
+    });
+</script>
+{% endblock %}

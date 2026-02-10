@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .header-gradient {
+        background: linear-gradient(90deg, var(--primary), #7b2dff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+    }
+
+    .filter-label {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .summary-card {
+        backdrop-filter: blur(8px);
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 12px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+        padding: 1.25rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .summary-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 0 15px rgba(0, 247, 255, 0.15);
+    }
+
+    .summary-card .card-label {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-card .card-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--light);
+    }
+
+    .chart-container {
+        backdrop-filter: blur(8px);
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 12px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+        padding: 1rem;
+    }
+
+    .chart-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--primary);
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-holographic {
+        background: transparent;
+        border: 1px solid rgba(0, 247, 255, 0.3);
+        color: var(--primary);
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-holographic:hover {
+        background: linear-gradient(45deg, rgba(0, 247, 255, 0.2), rgba(123, 45, 255, 0.2));
+        border-color: var(--primary);
+        box-shadow: 0 0 15px rgba(0, 247, 255, 0.3);
+        color: white;
+    }
+
+    .glass-card {
+        backdrop-filter: blur(8px);
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 12px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+        padding: 1rem;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="header-gradient mb-0">PER ACCOUNT HISTORY</h1>
+        <a href="{{ url_for('investments') }}" class="btn btn-holographic">
+            <i class="bi bi-arrow-left me-1"></i> Back to Investments
+        </a>
+    </div>
+
+    <!-- Filter -->
+    <div class="glass-card mb-4">
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <label for="accountFilter" class="filter-label">FILTER BY ACCOUNT</label>
+                <select id="accountFilter" class="form-select bg-dark text-light border-primary">
+                    <option value="">All Accounts</option>
+                    {% for account in accounts %}
+                    <option value="{{ account }}">{{ account }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="dateFilter" class="filter-label">FILTER BY DATE</label>
+                <select id="dateFilter" class="form-select bg-dark text-light border-primary">
+                    <option value="">All Dates</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-outline-danger" id="deleteAllBtn" style="display: none;">
+                    <i class="bi bi-trash me-1"></i> Delete All Filtered
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">Total Investment</div>
+                <div class="card-value" id="summaryInvested">₱0.00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">Current Value</div>
+                <div class="card-value" id="summaryCurrentValue">₱0.00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">Profit / Loss</div>
+                <div class="card-value" id="summaryProfitLoss">₱0.00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card">
+                <div class="card-label">% Profit / Loss</div>
+                <div class="card-value" id="summaryProfitPct">0.00%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="table-responsive glass-card mb-4">
+        <table class="table table-hover" id="historyTable" style="color: var(--light);">
+            <thead>
+                <tr>
+                    <th style="color: var(--primary);">DATE</th>
+                    <th style="color: var(--primary);">ACCOUNT</th>
+                    <th style="color: var(--primary);">GOAL</th>
+                    <th style="color: var(--primary);">PLATFORM</th>
+                    <th style="color: var(--primary);">TYPE</th>
+                    <th class="text-end" style="color: var(--primary);">INVESTED</th>
+                    <th class="text-end" style="color: var(--primary);">CURRENT VALUE</th>
+                    <th class="text-end" style="color: var(--primary);">PROFIT/LOSS</th>
+                    <th class="text-end" style="color: var(--primary);">% P/L</th>
+                    <th class="text-center" style="color: var(--primary);">ACTION</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                <tr><td colspan="10" class="text-center">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Line Chart -->
+    <div class="chart-container mb-4">
+        <div class="chart-title">Account History Trend</div>
+        <div id="accountLineChart"></div>
+    </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accountFilter = document.getElementById('accountFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+    const tbody = document.getElementById('historyTableBody');
+    let allSnapshots = [];
+
+    function formatNumber(value, showSign = false) {
+        return (showSign && value > 0 ? '+' : '') + value.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function getFilteredSnapshots() {
+        const selectedDate = dateFilter.value;
+        if (!selectedDate) return allSnapshots;
+        return allSnapshots.filter(s => s.date.substring(0, 10) === selectedDate);
+    }
+
+    function populateDateFilter(snapshots) {
+        const dates = [...new Set(snapshots.map(s => s.date.substring(0, 10)))].sort().reverse();
+        const currentValue = dateFilter.value;
+        dateFilter.innerHTML = '<option value="">All Dates</option>';
+        dates.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = d;
+            dateFilter.appendChild(opt);
+        });
+        if (currentValue && dates.includes(currentValue)) {
+            dateFilter.value = currentValue;
+        }
+    }
+
+    function updateDeleteAllBtn() {
+        const filtered = getFilteredSnapshots();
+        const hasFilter = accountFilter.value || dateFilter.value;
+        deleteAllBtn.style.display = (hasFilter && filtered.length > 0) ? '' : 'none';
+    }
+
+    function applyDateFilter() {
+        const filtered = getFilteredSnapshots();
+        renderTable(filtered);
+        renderChart(filtered);
+        updateSummaryCards(filtered);
+        updateDeleteAllBtn();
+    }
+
+    function loadSnapshots() {
+        const account = accountFilter.value;
+        const url = '{{ url_for("account_snapshots") }}' + (account ? '?account=' + encodeURIComponent(account) : '');
+
+        fetch(url)
+        .then(res => res.json())
+        .then(snapshots => {
+            allSnapshots = snapshots;
+            populateDateFilter(snapshots);
+            applyDateFilter();
+        })
+        .catch(() => {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading history.</td></tr>';
+        });
+    }
+
+    function updateSummaryCards(snapshots) {
+        if (snapshots.length === 0) {
+            document.getElementById('summaryInvested').textContent = '₱0.00';
+            document.getElementById('summaryCurrentValue').textContent = '₱0.00';
+            document.getElementById('summaryProfitLoss').textContent = '₱0.00';
+            document.getElementById('summaryProfitPct').textContent = '0.00%';
+            return;
+        }
+        // Use the latest snapshot date's data
+        const latestDate = snapshots[0].date;
+        const latestSnapshots = snapshots.filter(s => s.date === latestDate);
+
+        let totalInvested = 0, totalCurrent = 0;
+        latestSnapshots.forEach(s => {
+            totalInvested += s.total_invested;
+            totalCurrent += s.current_value;
+        });
+        const pl = totalCurrent - totalInvested;
+        const plPct = totalInvested > 0 ? ((pl / totalInvested) * 100) : 0;
+
+        document.getElementById('summaryInvested').textContent = '₱' + formatNumber(totalInvested);
+        document.getElementById('summaryCurrentValue').textContent = '₱' + formatNumber(totalCurrent);
+
+        const plEl = document.getElementById('summaryProfitLoss');
+        plEl.textContent = '₱' + formatNumber(pl, true);
+        plEl.classList.remove('text-success', 'text-danger');
+        plEl.classList.add(pl >= 0 ? 'text-success' : 'text-danger');
+
+        const pctEl = document.getElementById('summaryProfitPct');
+        pctEl.textContent = (plPct >= 0 ? '+' : '') + plPct.toFixed(2) + '%';
+        pctEl.classList.remove('text-success', 'text-danger');
+        pctEl.classList.add(plPct >= 0 ? 'text-success' : 'text-danger');
+    }
+
+    function renderTable(snapshots) {
+        if (snapshots.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No account snapshots saved yet.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = snapshots.map(s => {
+            const plClass = s.profit_loss >= 0 ? 'text-success' : 'text-danger';
+            return `<tr data-snapshot-id="${s.id}">
+                <td>${s.date}</td>
+                <td>${s.account_name}</td>
+                <td>${s.goal}</td>
+                <td>${s.platform}</td>
+                <td>${s.type}</td>
+                <td class="text-end">${formatNumber(s.total_invested)}</td>
+                <td class="text-end">${formatNumber(s.current_value)}</td>
+                <td class="text-end ${plClass}">${formatNumber(s.profit_loss, true)}</td>
+                <td class="text-end ${plClass}">${s.profit_loss_pct >= 0 ? '+' : ''}${s.profit_loss_pct.toFixed(2)}%</td>
+                <td class="text-center"><button class="btn btn-sm btn-outline-danger delete-btn" data-id="${s.id}"><i class="bi bi-trash"></i></button></td>
+            </tr>`;
+        }).join('');
+
+        // Attach delete handlers
+        tbody.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!confirm('Delete this snapshot?')) return;
+                const id = this.dataset.id;
+                fetch('/investments/account-snapshots/' + id, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        allSnapshots = allSnapshots.filter(s => s.id != id);
+                        populateDateFilter(allSnapshots);
+                        applyDateFilter();
+                    }
+                })
+                .catch(() => alert('Error deleting snapshot.'));
+            });
+        });
+    }
+
+    function renderChart(snapshots) {
+        const chartDiv = document.getElementById('accountLineChart');
+        if (snapshots.length === 0) {
+            Plotly.purge(chartDiv);
+            chartDiv.innerHTML = '';
+            return;
+        }
+
+        // Reverse to chronological order
+        const sorted = [...snapshots].reverse();
+
+        const selectedAccount = accountFilter.value;
+
+        if (selectedAccount) {
+            // Single account: show invested, current value, P/L lines
+            const dates = sorted.map(s => s.date);
+            const traces = [
+                {
+                    x: dates, y: sorted.map(s => s.total_invested),
+                    name: 'Invested', mode: 'lines+markers', type: 'scatter',
+                    line: { color: '#7b2dff', width: 2 }, marker: { size: 6 }
+                },
+                {
+                    x: dates, y: sorted.map(s => s.current_value),
+                    name: 'Current Value', mode: 'lines+markers', type: 'scatter',
+                    line: { color: '#00f7ff', width: 2 }, marker: { size: 6 }
+                },
+                {
+                    x: dates, y: sorted.map(s => s.profit_loss),
+                    name: 'Profit/Loss', mode: 'lines+markers', type: 'scatter',
+                    line: { color: '#00ff9d', width: 2 }, marker: { size: 6 },
+                    yaxis: 'y2'
+                }
+            ];
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { t: 20, b: 50, l: 70, r: 70 },
+                height: 400,
+                legend: { font: { color: '#e0e0ff', size: 11 }, orientation: 'h', y: -0.2 },
+                xaxis: { color: '#e0e0ff', gridcolor: 'rgba(123,45,255,0.15)' },
+                yaxis: { title: 'Amount (₱)', color: '#e0e0ff', gridcolor: 'rgba(123,45,255,0.15)' },
+                yaxis2: { title: 'P/L (₱)', color: '#00ff9d', overlaying: 'y', side: 'right', gridcolor: 'rgba(0,255,157,0.1)' }
+            };
+            Plotly.newPlot(chartDiv, traces, layout, { displayModeBar: false, responsive: true });
+        } else {
+            // All accounts: aggregate by date, show total invested & current value per date
+            const dateMap = {};
+            sorted.forEach(s => {
+                if (!dateMap[s.date]) dateMap[s.date] = { invested: 0, current: 0 };
+                dateMap[s.date].invested += s.total_invested;
+                dateMap[s.date].current += s.current_value;
+            });
+            const dates = Object.keys(dateMap);
+            const traces = [
+                {
+                    x: dates, y: dates.map(d => dateMap[d].invested),
+                    name: 'Total Invested', mode: 'lines+markers', type: 'scatter',
+                    line: { color: '#7b2dff', width: 2 }, marker: { size: 6 }
+                },
+                {
+                    x: dates, y: dates.map(d => dateMap[d].current),
+                    name: 'Total Current Value', mode: 'lines+markers', type: 'scatter',
+                    line: { color: '#00f7ff', width: 2 }, marker: { size: 6 }
+                },
+                {
+                    x: dates, y: dates.map(d => dateMap[d].current - dateMap[d].invested),
+                    name: 'Total P/L', mode: 'lines+markers', type: 'scatter',
+                    line: { color: '#00ff9d', width: 2 }, marker: { size: 6 },
+                    yaxis: 'y2'
+                }
+            ];
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { t: 20, b: 50, l: 70, r: 70 },
+                height: 400,
+                legend: { font: { color: '#e0e0ff', size: 11 }, orientation: 'h', y: -0.2 },
+                xaxis: { color: '#e0e0ff', gridcolor: 'rgba(123,45,255,0.15)' },
+                yaxis: { title: 'Amount (₱)', color: '#e0e0ff', gridcolor: 'rgba(123,45,255,0.15)' },
+                yaxis2: { title: 'P/L (₱)', color: '#00ff9d', overlaying: 'y', side: 'right', gridcolor: 'rgba(0,255,157,0.1)' }
+            };
+            Plotly.newPlot(chartDiv, traces, layout, { displayModeBar: false, responsive: true });
+        }
+    }
+
+    accountFilter.addEventListener('change', function() {
+        dateFilter.value = '';
+        loadSnapshots();
+    });
+    dateFilter.addEventListener('change', applyDateFilter);
+
+    // Delete All Filtered
+    deleteAllBtn.addEventListener('click', function() {
+        const filtered = getFilteredSnapshots();
+        if (filtered.length === 0) return;
+        const msg = `Delete ${filtered.length} record(s) matching current filter?`;
+        if (!confirm(msg)) return;
+
+        const params = new URLSearchParams();
+        if (accountFilter.value) params.set('account', accountFilter.value);
+        if (dateFilter.value) params.set('date', dateFilter.value);
+
+        fetch('{{ url_for("bulk_delete_account_snapshots") }}?' + params.toString(), { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const deletedIds = new Set(filtered.map(s => s.id));
+                allSnapshots = allSnapshots.filter(s => !deletedIds.has(s.id));
+                populateDateFilter(allSnapshots);
+                applyDateFilter();
+                alert(`${data.deleted} record(s) deleted.`);
+            }
+        })
+        .catch(() => alert('Error deleting records.'));
+    });
+
+    // Initial load
+    loadSnapshots();
+});
+</script>
+{% endblock %}

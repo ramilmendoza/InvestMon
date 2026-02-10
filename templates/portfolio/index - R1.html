@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .portfolio-summary {
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+    }
+    
+    .summary-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .profit-positive {
+        color: var(--success);
+    }
+    
+    .profit-negative {
+        color: var(--danger);
+    }
+    
+    .search-container {
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="header-gradient mb-0">INVESTMENT PORTFOLIO</h1>
+        <div class="date-display">{{ now().strftime('%Y-%m-%d %H:%M') }}</div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>TOTAL INVESTED</h6>
+                <div class="summary-value">
+                    {{ "₱{:,.2f}".format(portfolios|sum(attribute='total_cost')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>MARKET VALUE</h6>
+                <div class="summary-value">
+                    {{ "₱{:,.2f}".format(portfolios|sum(attribute='market_value')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>TOTAL PROFIT</h6>
+                <div class="summary-value {% if (portfolios|sum(attribute='profit')) >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {{ "₱{:+,.2f}".format(portfolios|sum(attribute='profit')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>PROFIT %</h6>
+                <div class="summary-value {% if portfolios|sum(attribute='total_cost') > 0 and (portfolios|sum(attribute='profit')/portfolios|sum(attribute='total_cost')*100) >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {% set total_cost = portfolios|sum(attribute='total_cost') %}
+                    {% if total_cost > 0 %}
+                        {{ "{:+.2f}%".format(portfolios|sum(attribute='profit')/total_cost*100) }}
+                    {% else %}
+                        0.00%
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="{{ url_for('add_portfolio') }}" class="btn btn-holographic me-2">
+                <i class="bi bi-plus-circle"></i> Add Position
+            </a>
+            <a href="{{ url_for('update_prices') }}" class="btn btn-holographic me-2">
+                <i class="bi bi-arrow-clockwise"></i> Update Prices
+            </a>
+            <a href="{{ url_for('my_stocks') }}" class="btn btn-holographic">
+                <i class="bi bi-grid-3x3"></i> My Stocks
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Filter -->
+    <div class="row search-container">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by symbol or account...">
+                <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive glass-card">
+        <table class="table table-hover" id="portfolioTable">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th>SYMBOL</th>
+                    <th>ACCOUNT</th>
+                    <th class="text-end">SHARES</th>
+                    <th class="text-end">AVG PRICE</th>
+                    <th class="text-end">LATEST PRICE</th>
+                    <th class="text-end">TOTAL COST</th>
+                    <th class="text-end">MARKET VALUE</th>
+                    <th class="text-end">PROFIT</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for portfolio in portfolios %}
+                <tr>
+                    <td class="fw-bold">{{ portfolio.symbol }}</td>
+                    <td>{{ portfolio.account }}</td>
+                    <td class="text-end">{{ "{:,.2f}".format(portfolio.shares) }}</td>
+                    <td class="text-end">{{ "₱{:,.5f}".format(portfolio.average_price) }}</td>
+                    <td class="text-end">{{ "₱{:,.2f}".format(portfolio.latest_price) if portfolio.latest_price else '-' }}</td>
+                    <td class="text-end">{{ "₱{:,.2f}".format(portfolio.total_cost) }}</td>
+                    <td class="text-end">{{ "₱{:,.2f}".format(portfolio.market_value) }}</td>
+                    <td class="text-end {% if portfolio.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "₱{:+,.2f}".format(portfolio.profit) }}
+                        <br>
+                        <small>
+                            {% if portfolio.total_cost > 0 %}
+                                {{ "{:+.2f}%".format(portfolio.profit/portfolio.total_cost*100) }}
+                            {% else %}
+                                0.00%
+                            {% endif %}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('edit_portfolio', id=portfolio.id) }}" class="btn btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{{ url_for('delete_portfolio', id=portfolio.id) }}" class="btn btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const table = document.getElementById('portfolioTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const symbol = rows[i].cells[0].textContent.toLowerCase();
+                const account = rows[i].cells[1].textContent.toLowerCase();
+                
+                if (symbol.includes(filter) || account.includes(filter)) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        });
+        
+        clearSearch.addEventListener('click', function() {
+            searchInput.value = '';
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].style.display = '';
+            }
+        });
+    });
+</script>
+{% endblock %}

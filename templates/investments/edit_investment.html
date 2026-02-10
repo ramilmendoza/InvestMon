@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Edit Investment</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="filter_goal" value="{{ filter_goal }}">
+            <input type="hidden" name="filter_account" value="{{ filter_account }}">
+            <input type="hidden" name="filter_type" value="{{ filter_type }}">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Investment Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ investment.name }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="platform" class="form-label">Platform</label>
+                    <input type="text" class="form-control" id="platform" name="platform" value="{{ investment.platform }}" required>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="account_name" class="form-label">Account Name</label>
+                    <input type="text" class="form-control" id="account_name" name="account_name" value="{{ investment.account_name }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="type" class="form-label">Type</label>
+                    <select class="form-select" id="type" name="type" required>
+                        <option value="Stocks" {% if investment.type == 'Stocks' %}selected{% endif %}>Stocks</option>
+                        <option value="Mutual Funds" {% if investment.type == 'Mutual Funds' %}selected{% endif %}>Mutual Funds</option>
+                        <option value="Provident Funds" {% if investment.type == 'Provident Funds' %}selected{% endif %}>Provident Funds</option>
+                        <option value="Crypto" {% if investment.type == 'Crypto' %}selected{% endif %}>Crypto</option>
+                        <option value="Bonds/T-Bills" {% if investment.type == 'Bonds/T-Bills' %}selected{% endif %}>Bonds/T-Bills</option>
+                        <option value="ETFs" {% if investment.type == 'ETFs' %}selected{% endif %}>ETFs</option>
+                        <option value="Others" {% if investment.type == 'Others' %}selected{% endif %}>Others</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('investments', filter_goal=filter_goal, filter_account=filter_account, filter_type=filter_type) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">Update Investment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

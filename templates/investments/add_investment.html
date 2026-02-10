@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Add New Investment</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="filter_goal" value="{{ filter_goal }}">
+            <input type="hidden" name="filter_account" value="{{ filter_account }}">
+            <input type="hidden" name="filter_type" value="{{ filter_type }}">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Investment Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="platform" class="form-label">Platform</label>
+                    <input type="text" class="form-control" id="platform" name="platform" required>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="account_name" class="form-label">Account Name</label>
+                    <input type="text" class="form-control" id="account_name" name="account_name" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="type" class="form-label">Type</label>
+                    <select class="form-select" id="type" name="type" required>
+                        <option value="" selected disabled>Select type</option>
+                        <option value="Stocks">Stocks</option>
+                        <option value="Mutual Funds">Mutual Funds</option>
+                        <option value="Provident Funds">Provident Funds</option>
+                        <option value="Crypto">Crypto</option>
+                        <option value="Bonds/T-Bills">Bonds/T-Bills</option>
+                        <option value="ETFs">ETFs</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="initial_amount" class="form-label">Initial Amount (optional)</label>
+                    <input type="number" step="0.01" class="form-control" id="initial_amount" name="initial_amount" value="0">
+                </div>
+            </div>
+			
+		    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('investments', filter_goal=filter_goal, filter_account=filter_account, filter_type=filter_type) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Investment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

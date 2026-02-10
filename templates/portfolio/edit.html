@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card glass-card">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Edit Portfolio Position</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <input type="hidden" name="filter_symbol" value="{{ filter_symbol }}">
+                <input type="hidden" name="filter_account" value="{{ filter_account }}">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="symbol" class="form-label">Symbol</label>
+                        <select class="form-select" id="symbol" name="symbol" required>
+                            <option value="">Select Symbol</option>
+                            {% for symbol in symbols %}
+                                <option value="{{ symbol }}" {% if symbol == portfolio.symbol %}selected{% endif %}>
+                                    {{ symbol }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="shares" class="form-label">Shares</label>
+                        <input type="number" step="0.00001" class="form-control" id="shares" name="shares" 
+                               value="{{ portfolio.shares }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="average_price" class="form-label">Average Price</label>
+                        <input type="number" step="0.00001" class="form-control" id="average_price" name="average_price" 
+                               value="{{ portfolio.average_price }}" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="account" class="form-label">Account</label>
+                        <input type="text" class="form-control" id="account" name="account" 
+                               value="{{ portfolio.account }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="investment_id" class="form-label">Investment (Optional)</label>
+                        <select class="form-select" id="investment_id" name="investment_id">
+                            <option value="">Select Investment</option>
+                            {% for investment in investments %}
+                                <option value="{{ investment.id }}" {% if investment.id == portfolio.investment_id %}selected{% endif %}>
+                                    {{ investment.name }} ({{ investment.account_name }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('portfolio', filter_symbol=filter_symbol, filter_account=filter_account) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Position</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

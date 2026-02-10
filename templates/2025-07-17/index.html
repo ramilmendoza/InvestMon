@@ -1,0 +1,612 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dark-bg">
+<div class="row mb-3 align-items-center">
+    <div class="col-md-6">
+        <h1 class="gradient-text mb-1" style="font-size: 1.8rem;">PSE Stock Dashboard</h1>
+        <p class="text-muted-2 mb-0" style="font-size: 0.85rem;">Latest data as of {{ latest_date }}</p>
+    </div>
+    <div class="col-md-6 text-end d-flex justify-content-end align-items-center">
+        <form class="d-flex me-2 align-items-center" id="filterForm" style="height: 32px;">
+            <select class="form-select-glass me-2" id="symbolFilter" name="symbol" style="height: 100%; padding: 0.25rem 0.5rem; font-size: 0.85rem;">
+                <option value="">All Symbols</option>
+                <optgroup label="Individual Symbols">
+                    {% for symbol in symbols %}
+                        <option value="{{ symbol }}" {% if request.args.get('symbol') == symbol %}selected{% endif %}>
+                            {{ symbol }}
+                        </option>
+                    {% endfor %}
+                </optgroup>
+            </select>
+        </form>
+        <button class="btn btn-holographic" id="watchlistBtn" data-bs-toggle="modal" data-bs-target="#watchlistModal" 
+                style="height: 32px; padding: 0.25rem 0.75rem; font-size: 0.85rem;">
+            <i class="bi bi-bookmark-plus"></i> Watchlist
+        </button>
+    </div>
+</div>
+
+<!-- Watchlist Management Modal -->
+<div class="modal fade glass-modal" id="watchlistModal" tabindex="-1" aria-labelledby="watchlistModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title gradient-text-2" id="watchlistModalLabel">Manage Watchlists</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control-glass" id="watchlistName" placeholder="New watchlist name">
+                        <button class="btn btn-holographic" id="createWatchlistBtn">Create</button>
+                    </div>
+                </div>
+                
+                <div id="watchlistContainer">
+                    <!-- Watchlists will be populated here -->
+                </div>
+                
+                <div id="editWatchlistSection" class="mt-3" style="display: none;">
+                    <h6 class="gradient-text-3">Edit: <span id="editWatchlistName"></span></h6>
+                    <div class="input-group mb-2">
+                        <select class="form-select-glass" id="availableSymbols">
+                            <option value="">Select symbol to add</option>
+                            {% for symbol in symbols %}
+                                <option value="{{ symbol }}">{{ symbol }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-holographic" id="addSymbolBtn">Add</button>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="gradient-text-3">Symbols in Watchlist:</h6>
+                        <div id="currentSymbols" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success-holo" id="saveWatchlistBtn">Save</button>
+                        <button class="btn btn-secondary-glass" id="cancelEditBtn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive mt-3">
+    <table class="table table-hover table-futuristic" id="stockTable">
+        <thead>
+            <tr>
+                <th class="sortable" data-sort="symbol">Symbol <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="change">Change <span class="sort-icon">↕</span></th>
+                <th>Last Price</th>
+                <th>Open</th>
+                <th>High</th>
+                <th>Low</th>
+                <th>Volume</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="stockTableBody">
+            {% for stock in stocks %}
+                {% set change = ((stock.close - stock.open) / stock.open * 100) if stock.open and stock.close else 0 %}
+                <tr data-symbol="{{ stock.symbol }}" data-change="{{ change }}">
+                    <td class="fw-bold">{{ stock.symbol }}</td>
+                    <td class="fw-bold {% if change > 0 %}text-success-glow{% elif change < 0 %}text-danger-glow{% else %}text-secondary{% endif %}">
+                        {% if stock.open and stock.close %}
+                            {{ "%+.2f"|format(change) }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="fw-medium">{{ "%.2f"|format(stock.close) if stock.close else '-' }}</td>
+                    <td>{{ "%.2f"|format(stock.open) if stock.open else '-' }}</td>
+                    <td>{{ "%.2f"|format(stock.high) if stock.high else '-' }}</td>
+                    <td>{{ "%.2f"|format(stock.low) if stock.low else '-' }}</td>
+                    <td>{{ "{:,.0f}".format(stock.volume) if stock.volume else '-' }}</td>
+                    <td>
+                        <a href="/symbol/{{ stock.symbol }}" class="btn btn-sm btn-holographic" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">View</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
+<style>
+    :root {
+        --primary-glow: rgba(0, 255, 255, 0.7);
+        --secondary-glow: rgba(138, 43, 226, 0.7);
+        --glass-bg: rgba(10, 10, 15, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        --table-row-bg: rgba(15, 15, 25, 0.9);
+        --table-row-alt: rgba(20, 20, 30, 0.9);
+        --table-header: rgba(5, 5, 10, 0.95);
+        --dark-bg: #08080c;
+        --hover-bg: rgba(40, 40, 60, 0.9);
+    }
+    
+    .dark-bg {
+        background-color: var(--dark-bg);
+        min-height: 100vh;
+        padding: 20px;
+    }
+    
+    .gradient-text {
+        background: linear-gradient(90deg, #00ffff, #0088ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: 600;
+    }
+    
+    .gradient-text-2 {
+        background: linear-gradient(90deg, #00ff88, #0088ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: 600;
+    }
+    
+    .gradient-text-3 {
+        background: linear-gradient(90deg, #ff00ff, #ff0088);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: 600;
+    }
+    
+    .text-muted-2 {
+        color: rgba(200, 200, 255, 0.6) !important;
+    }
+    
+    /* Enhanced Dark Table */
+    .table-futuristic {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        color: rgba(255, 255, 255, 0.9);
+        overflow: hidden;
+        box-shadow: var(--glass-shadow);
+    }
+    
+    .table-futuristic th {
+        background: var(--table-header) !important;
+        color: #fff !important;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .table-futuristic tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--table-row-bg);
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .table-futuristic tr:nth-child(even) {
+        background: var(--table-row-alt);
+    }
+    
+    .table-futuristic tr:hover {
+        background: var(--hover-bg) !important;
+        transform: translateX(3px);
+        color: #fff;
+    }
+    
+    .table-futuristic td {
+        padding: 8px 12px;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        background-color: transparent !important;
+		color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .text-success-glow {
+        color: #00ffaa !important;
+        text-shadow: 0 0 8px rgba(0, 255, 170, 0.4);
+    }
+    
+    .text-danger-glow {
+        color: #ff3366 !important;
+        text-shadow: 0 0 8px rgba(255, 51, 102, 0.4);
+    }
+    
+    .fw-medium {
+        font-weight: 500;
+    }
+    
+    .sortable {
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+    }
+    
+    .sortable:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .sort-icon {
+        margin-left: 5px;
+        font-size: 0.7em;
+    }
+    
+    .sort-asc .sort-icon::after {
+        content: " ↑";
+    }
+    
+    .sort-desc .sort-icon::after {
+        content: " ↓";
+    }
+    
+    /* Glass Elements */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        color: white;
+    }
+    
+    .glass-modal .modal-content {
+        background: transparent;
+        border: none;
+    }
+    
+    /* Form Controls */
+    .form-select-glass, .form-control-glass {
+        background: rgba(15, 15, 25, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+        backdrop-filter: blur(5px);
+        font-size: 0.85rem;
+        height: 100%;
+        transition: all 0.2s ease;
+    }
+    
+    .form-select-glass:focus, .form-control-glass:focus {
+        background: rgba(20, 20, 35, 0.9) !important;
+        border-color: var(--primary-glow) !important;
+        box-shadow: 0 0 0 0.25rem rgba(0, 255, 255, 0.2) !important;
+    }
+    
+    /* Buttons */
+    .btn-holographic {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(138, 43, 226, 0.2));
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        backdrop-filter: blur(5px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .btn-holographic:hover {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(138, 43, 226, 0.3));
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    }
+    
+    .btn-holographic::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+            to bottom right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: rotate(30deg);
+        transition: all 0.5s ease;
+    }
+    
+    .btn-holographic:hover::before {
+        animation: holographic 1.5s infinite linear;
+    }
+    
+    /* Watchlist Cards */
+    .watchlist-card {
+        background: rgba(20, 20, 35, 0.7);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .symbol-badge {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        background: rgba(40, 40, 60, 0.7);
+        color: white;
+    }
+    
+    @keyframes holographic {
+        0% {
+            transform: rotate(30deg) translate(-30%, -30%);
+        }
+        100% {
+            transform: rotate(30deg) translate(30%, 30%);
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM elements
+        const symbolFilter = document.getElementById('symbolFilter');
+        const watchlistBtn = document.getElementById('watchlistBtn');
+        const watchlistModal = document.getElementById('watchlistModal');
+        const watchlistName = document.getElementById('watchlistName');
+        const createWatchlistBtn = document.getElementById('createWatchlistBtn');
+        const watchlistContainer = document.getElementById('watchlistContainer');
+        const editWatchlistSection = document.getElementById('editWatchlistSection');
+        const editWatchlistName = document.getElementById('editWatchlistName');
+        const availableSymbols = document.getElementById('availableSymbols');
+        const addSymbolBtn = document.getElementById('addSymbolBtn');
+        const currentSymbols = document.getElementById('currentSymbols');
+        const saveWatchlistBtn = document.getElementById('saveWatchlistBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const stockTableBody = document.getElementById('stockTableBody');
+        
+        // State variables
+        let watchlists = JSON.parse(localStorage.getItem('stockWatchlists')) || [];
+        let currentEditingWatchlist = null;
+        let currentSort = {
+            column: null,
+            direction: 1 // 1 for ascending, -1 for descending
+        };
+
+        // Initialize watchlists in filter dropdown
+        updateWatchlistFilter();
+        renderWatchlists();
+        
+        // Create new watchlist
+        createWatchlistBtn.addEventListener('click', function() {
+            const name = watchlistName.value.trim();
+            if (name && !watchlists.some(w => w.name === name)) {
+                watchlists.push({
+                    name: name,
+                    symbols: []
+                });
+                saveWatchlists();
+                renderWatchlists();
+                updateWatchlistFilter();
+                watchlistName.value = '';
+            }
+        });
+        
+        // Edit watchlist symbols
+        addSymbolBtn.addEventListener('click', function() {
+            if (currentEditingWatchlist !== null) {
+                const symbol = availableSymbols.value;
+                if (symbol && !watchlists[currentEditingWatchlist].symbols.includes(symbol)) {
+                    watchlists[currentEditingWatchlist].symbols.push(symbol);
+                    renderCurrentSymbols();
+                }
+            }
+        });
+        
+        // Save watchlist changes
+        saveWatchlistBtn.addEventListener('click', function() {
+            if (currentEditingWatchlist !== null) {
+                saveWatchlists();
+                renderWatchlists();
+                updateWatchlistFilter();
+                cancelEdit();
+                
+                // If this watchlist is currently selected, update the view
+                if (symbolFilter.value === watchlists[currentEditingWatchlist].name) {
+                    filterStocks();
+                }
+            }
+        });
+        
+        // Cancel edit mode
+        cancelEditBtn.addEventListener('click', cancelEdit);
+        
+        // Filter stocks when dropdown changes
+        symbolFilter.addEventListener('change', filterStocks);
+        
+        // Sort functionality
+        const sortableHeaders = document.querySelectorAll('.sortable');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const sortColumn = this.dataset.sort;
+                
+                if (currentSort.column === sortColumn) {
+                    currentSort.direction *= -1;
+                } else {
+                    currentSort.column = sortColumn;
+                    currentSort.direction = 1;
+                }
+                
+                sortableHeaders.forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                });
+                
+                this.classList.add(currentSort.direction === 1 ? 'sort-asc' : 'sort-desc');
+                sortTable();
+            });
+        });
+
+        // Functions
+        function saveWatchlists() {
+            localStorage.setItem('stockWatchlists', JSON.stringify(watchlists));
+        }
+        
+        function updateWatchlistFilter() {
+            // Clear existing watchlists
+            const existingWatchlists = document.querySelectorAll('optgroup[data-type="watchlist"]');
+            existingWatchlists.forEach(el => el.remove());
+            
+            // Add new watchlists
+            if (watchlists.length > 0) {
+                const watchlistGroup = document.createElement('optgroup');
+                watchlistGroup.label = "Watchlists";
+                watchlistGroup.dataset.type = "watchlist";
+                
+                watchlists.forEach(watchlist => {
+                    const option = document.createElement('option');
+                    option.value = watchlist.name;
+                    option.textContent = watchlist.name;
+                    watchlistGroup.appendChild(option);
+                });
+                
+                symbolFilter.insertBefore(watchlistGroup, symbolFilter.querySelector('optgroup'));
+            }
+        }
+        
+        function renderWatchlists() {
+            watchlistContainer.innerHTML = '';
+            
+            if (watchlists.length === 0) {
+                watchlistContainer.innerHTML = '<p class="text-muted-2">No watchlists created yet</p>';
+                return;
+            }
+            
+            watchlists.forEach((watchlist, index) => {
+                const card = document.createElement('div');
+                card.className = 'watchlist-card';
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6>${watchlist.name}</h6>
+                        <div class="watchlist-actions">
+                            <button class="btn btn-sm btn-outline-primary edit-watchlist" data-index="${index}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-watchlist" data-index="${index}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="symbols-container mt-2">
+                        ${watchlist.symbols.map(symbol => 
+                            `<span class="symbol-badge">${symbol}</span>`
+                        ).join('')}
+                        ${watchlist.symbols.length === 0 ? '<span class="text-muted-2">No symbols</span>' : ''}
+                    </div>
+                `;
+                watchlistContainer.appendChild(card);
+                
+                // Add event listeners to buttons
+                card.querySelector('.edit-watchlist').addEventListener('click', () => editWatchlist(index));
+                card.querySelector('.delete-watchlist').addEventListener('click', () => deleteWatchlist(index));
+            });
+        }
+        
+        function editWatchlist(index) {
+            currentEditingWatchlist = index;
+            const watchlist = watchlists[index];
+            editWatchlistName.textContent = watchlist.name;
+            renderCurrentSymbols();
+            editWatchlistSection.style.display = 'block';
+        }
+        
+        function renderCurrentSymbols() {
+            if (currentEditingWatchlist === null) return;
+            
+            const watchlist = watchlists[currentEditingWatchlist];
+            currentSymbols.innerHTML = '';
+            
+            watchlist.symbols.forEach(symbol => {
+                const badge = document.createElement('div');
+                badge.className = 'symbol-badge';
+                badge.innerHTML = `
+                    ${symbol}
+                    <span class="remove-symbol" data-symbol="${symbol}">&times;</span>
+                `;
+                currentSymbols.appendChild(badge);
+                
+                badge.querySelector('.remove-symbol').addEventListener('click', function() {
+                    const symbolToRemove = this.dataset.symbol;
+                    const index = watchlist.symbols.indexOf(symbolToRemove);
+                    if (index !== -1) {
+                        watchlist.symbols.splice(index, 1);
+                        renderCurrentSymbols();
+                    }
+                });
+            });
+        }
+        
+        function deleteWatchlist(index) {
+            if (confirm(`Delete watchlist "${watchlists[index].name}"?`)) {
+                watchlists.splice(index, 1);
+                saveWatchlists();
+                renderWatchlists();
+                updateWatchlistFilter();
+                
+                // If deleted watchlist was selected, reset filter
+                if (symbolFilter.value === watchlists[index]?.name) {
+                    symbolFilter.value = '';
+                    filterStocks();
+                }
+            }
+        }
+        
+        function cancelEdit() {
+            editWatchlistSection.style.display = 'none';
+            currentEditingWatchlist = null;
+        }
+        
+        function filterStocks() {
+            const selectedValue = symbolFilter.value;
+            const rows = document.querySelectorAll('#stockTableBody tr');
+            
+            // Check if it's a watchlist
+            const watchlist = watchlists.find(w => w.name === selectedValue);
+            
+            rows.forEach(row => {
+                const symbol = row.dataset.symbol;
+                
+                if (selectedValue === '') {
+                    row.style.display = '';
+                } else if (watchlist) {
+                    // Show only symbols in the selected watchlist
+                    row.style.display = watchlist.symbols.includes(symbol) ? '' : 'none';
+                } else {
+                    // Show only the selected symbol
+                    row.style.display = symbol === selectedValue ? '' : 'none';
+                }
+            });
+            
+            // Reapply sorting if needed
+            if (currentSort.column) {
+                sortTable();
+            }
+        }
+        
+        function sortTable() {
+            const visibleRows = Array.from(stockTableBody.querySelectorAll('tr:not([style*="display: none"])'));
+            
+            visibleRows.sort((a, b) => {
+                const aValue = a.dataset[currentSort.column];
+                const bValue = b.dataset[currentSort.column];
+                
+                if (currentSort.column === 'change') {
+                    const aNum = parseFloat(aValue) || 0;
+                    const bNum = parseFloat(bValue) || 0;
+                    return (aNum - bNum) * currentSort.direction;
+                } else {
+                    return aValue.localeCompare(bValue) * currentSort.direction;
+                }
+            });
+            
+            // Reattach sorted rows
+            visibleRows.forEach(row => stockTableBody.appendChild(row));
+        }
+    });
+</script>
+{% endblock %}

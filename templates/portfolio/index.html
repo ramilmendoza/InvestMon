@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .portfolio-summary {
+        background-color: rgba(26, 26, 58, 0.7);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(123, 45, 255, 0.2);
+    }
+    
+    .summary-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .profit-positive {
+        color: var(--success);
+    }
+    
+    .profit-negative {
+        color: var(--danger);
+    }
+    
+    .search-container {
+        margin-bottom: 20px;
+    }
+
+    .filter-label {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .sortable {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .sortable:hover {
+        background-color: rgba(123, 45, 255, 0.1);
+    }
+    
+    .sortable::after {
+        content: '↕';
+        margin-left: 5px;
+        opacity: 0.5;
+        font-size: 0.8em;
+    }
+    
+    .sortable.asc::after {
+        content: '↑';
+        opacity: 1;
+    }
+    
+    .sortable.desc::after {
+        content: '↓';
+        opacity: 1;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="header-gradient mb-0">OLIMAR STOCK PORTFOLIO</h1>
+        <div class="date-display">{{ now().strftime('%Y-%m-%d %H:%M') }}</div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>TOTAL INVESTED</h6>
+                <div class="summary-value" id="summary-total-invested">
+                    {{ "₱{:,.2f}".format(portfolios|sum(attribute='total_cost')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>MARKET VALUE</h6>
+                <div class="summary-value" id="summary-market-value">
+                    {{ "₱{:,.2f}".format(portfolios|sum(attribute='market_value')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>TOTAL PROFIT</h6>
+                <div class="summary-value {% if (portfolios|sum(attribute='profit')) >= 0 %}profit-positive{% else %}profit-negative{% endif %}" id="summary-total-profit">
+                    {{ "₱{:+,.2f}".format(portfolios|sum(attribute='profit')) }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="portfolio-summary">
+                <h6>PROFIT %</h6>
+                <div class="summary-value {% if portfolios|sum(attribute='total_cost') > 0 and (portfolios|sum(attribute='profit')/portfolios|sum(attribute='total_cost')*100) >= 0 %}profit-positive{% else %}profit-negative{% endif %}" id="summary-profit-percent">
+                    {% set total_cost = portfolios|sum(attribute='total_cost') %}
+                    {% if total_cost > 0 %}
+                        {{ "{:+.2f}%".format(portfolios|sum(attribute='profit')/total_cost*100) }}
+                    {% else %}
+                        0.00%
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="{{ url_for('add_portfolio') }}" class="btn btn-holographic me-2">
+                <i class="bi bi-plus-circle"></i> Add Position
+            </a>
+            <a href="{{ url_for('update_prices') }}" class="btn btn-holographic me-2">
+                <i class="bi bi-arrow-clockwise"></i> Update Prices
+            </a>
+            <a href="{{ url_for('my_stocks') }}" class="btn btn-holographic">
+                <i class="bi bi-grid-3x3"></i> Summary Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row search-container">
+        <div class="col-md-4">
+            <label class="filter-label">FILTER BY SYMBOL</label>
+            <select id="symbolFilter" class="form-select bg-dark text-light border-primary">
+                <option value="">All Symbols</option>
+                {% for symbol in portfolios|map(attribute='symbol')|unique|sort %}
+                <option value="{{ symbol }}">{{ symbol }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="filter-label">FILTER BY ACCOUNT</label>
+            <select id="accountFilter" class="form-select bg-dark text-light border-primary">
+                <option value="">All Accounts</option>
+                {% for account in portfolios|map(attribute='account')|unique|sort %}
+                <option value="{{ account }}">{{ account }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="table-responsive glass-card">
+        <table class="table table-hover" id="portfolioTable">
+            <thead class="table-light sticky-top">
+                <tr>
+                    <th class="sortable" data-sort="symbol">SYMBOL</th>
+                    <th class="sortable" data-sort="account">ACCOUNT</th>
+                    <th class="text-end">SHARES</th>
+                    <th class="text-end">AVG PRICE</th>
+                    <th class="text-end">LATEST PRICE</th>
+                    <th class="text-end sortable" data-sort="total_cost">TOTAL COST</th>
+                    <th class="text-end sortable" data-sort="market_value">MARKET VALUE</th>
+                    <th class="text-end sortable" data-sort="profit">PROFIT</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for portfolio in portfolios %}
+                <tr data-total-cost="{{ portfolio.total_cost }}" 
+                    data-market-value="{{ portfolio.market_value }}" 
+                    data-profit="{{ portfolio.profit }}">
+                    <td class="fw-bold">{{ portfolio.symbol }}</td>
+                    <td>{{ portfolio.account }}</td>
+                    <td class="text-end">{{ "{:,.2f}".format(portfolio.shares) }}</td>
+                    <td class="text-end">{{ "₱{:,.5f}".format(portfolio.average_price) }}</td>
+                    <td class="text-end">{{ "₱{:,.2f}".format(portfolio.latest_price) if portfolio.latest_price else '-' }}</td>
+                    <td class="text-end" data-sort-value="{{ portfolio.total_cost }}">{{ "₱{:,.2f}".format(portfolio.total_cost) }}</td>
+                    <td class="text-end" data-sort-value="{{ portfolio.market_value }}">{{ "₱{:,.2f}".format(portfolio.market_value) }}</td>
+                    <td class="text-end {% if portfolio.profit >= 0 %}text-success{% else %}text-danger{% endif %}" data-sort-value="{{ portfolio.profit }}">
+                        {{ "₱{:+,.2f}".format(portfolio.profit) }}
+                        <br>
+                        <small>
+                            {% if portfolio.total_cost > 0 %}
+                                {{ "{:+.2f}%".format(portfolio.profit/portfolio.total_cost*100) }}
+                            {% else %}
+                                0.00%
+                            {% endif %}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('edit_portfolio', id=portfolio.id) }}" class="btn btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{{ url_for('delete_portfolio', id=portfolio.id) }}" class="btn btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const symbolFilter = document.getElementById('symbolFilter');
+        const accountFilter = document.getElementById('accountFilter');
+        const table = document.getElementById('portfolioTable');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+        const sortableHeaders = table.querySelectorAll('th.sortable');
+
+        let currentSort = {
+            column: null,
+            direction: 'asc' // 'asc' or 'desc'
+        };
+
+        // Function to update summary cards based on visible rows
+        function updateSummaryCards() {
+            let totalInvested = 0;
+            let totalMarketValue = 0;
+            let totalProfit = 0;
+
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    totalInvested += parseFloat(row.getAttribute('data-total-cost'));
+                    totalMarketValue += parseFloat(row.getAttribute('data-market-value'));
+                    totalProfit += parseFloat(row.getAttribute('data-profit'));
+                }
+            });
+
+            // Update summary cards
+            document.getElementById('summary-total-invested').textContent = `₱${totalInvested.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-market-value').textContent = `₱${totalMarketValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            const profitElement = document.getElementById('summary-total-profit');
+            profitElement.textContent = `₱${totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            // Update profit percentage
+            const profitPercentElement = document.getElementById('summary-profit-percent');
+            const profitPercent = totalInvested > 0 ? (totalProfit / totalInvested * 100) : 0;
+            profitPercentElement.textContent = `${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(2)}%`;
+
+            // Update colors based on profit
+            if (totalProfit >= 0) {
+                profitElement.classList.remove('profit-negative');
+                profitElement.classList.add('profit-positive');
+                profitPercentElement.classList.remove('profit-negative');
+                profitPercentElement.classList.add('profit-positive');
+            } else {
+                profitElement.classList.remove('profit-positive');
+                profitElement.classList.add('profit-negative');
+                profitPercentElement.classList.remove('profit-positive');
+                profitPercentElement.classList.add('profit-negative');
+            }
+        }
+
+        // Filter functionality
+        function applyFilters() {
+            const selectedSymbol = symbolFilter.value;
+            const selectedAccount = accountFilter.value;
+
+            rows.forEach(row => {
+                const symbol = row.cells[0].textContent.trim();
+                const account = row.cells[1].textContent.trim();
+                const matchSymbol = !selectedSymbol || symbol === selectedSymbol;
+                const matchAccount = !selectedAccount || account === selectedAccount;
+                row.style.display = (matchSymbol && matchAccount) ? '' : 'none';
+            });
+
+            updateSummaryCards();
+            updateActionLinks();
+        }
+
+        function updateActionLinks() {
+            const params = new URLSearchParams();
+            if (symbolFilter.value) params.set('filter_symbol', symbolFilter.value);
+            if (accountFilter.value) params.set('filter_account', accountFilter.value);
+            const qs = params.toString() ? '?' + params.toString() : '';
+
+            rows.forEach(row => {
+                const links = row.querySelectorAll('td:last-child a');
+                links.forEach(link => {
+                    const base = link.href.split('?')[0];
+                    link.href = base + qs;
+                });
+            });
+        }
+
+        // Restore filters from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('filter_symbol')) symbolFilter.value = urlParams.get('filter_symbol');
+        if (urlParams.get('filter_account')) accountFilter.value = urlParams.get('filter_account');
+        if (symbolFilter.value || accountFilter.value) applyFilters();
+
+        symbolFilter.addEventListener('change', applyFilters);
+        accountFilter.addEventListener('change', applyFilters);
+        
+        // Sorting functionality
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.getAttribute('data-sort');
+                
+                // Remove previous sort indicators
+                sortableHeaders.forEach(h => {
+                    h.classList.remove('asc', 'desc');
+                });
+                
+                // Toggle sort direction if clicking the same column
+                if (currentSort.column === column) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.column = column;
+                    currentSort.direction = 'asc';
+                }
+                
+                // Add sort indicator to current column
+                this.classList.add(currentSort.direction);
+                
+                // Sort the rows
+                sortTable(column, currentSort.direction);
+            });
+        });
+        
+        function sortTable(column, direction) {
+            const sortedRows = rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(column) {
+                    case 'symbol':
+                        aValue = a.cells[0].textContent.trim();
+                        bValue = b.cells[0].textContent.trim();
+                        return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                    
+                    case 'account':
+                        aValue = a.cells[1].textContent.trim();
+                        bValue = b.cells[1].textContent.trim();
+                        return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                    
+                    case 'total_cost':
+                    case 'market_value':
+                    case 'profit':
+                        // Use data attribute for numeric sorting
+                        aValue = parseFloat(a.querySelector(`td[data-sort-value]`).getAttribute('data-sort-value'));
+                        bValue = parseFloat(b.querySelector(`td[data-sort-value]`).getAttribute('data-sort-value'));
+                        return direction === 'asc' ? aValue - bValue : bValue - aValue;
+                }
+            });
+            
+            // Clear the table
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+            
+            // Add sorted rows back to table
+            sortedRows.forEach(row => {
+                tbody.appendChild(row);
+            });
+            
+            // Update summary cards after sorting (since all rows are visible after sorting)
+            updateSummaryCards();
+        }
+    });
+</script>
+{% endblock %}
